@@ -19,6 +19,8 @@ def ratelistToCsv(allList, csvName):
         outDf.loc[:,colName] = outDf.loc[:,colName] + setConcatList[typeIdx] #@ NaN + number = NaN
     outDf.to_csv(f'./{csvName}.csv', index = False)
 
+
+
 #@ Converts list of price for days [t, t+1, t+2, ..., t+28]
 #@ into rate of change of the answer format
 #@ i.e. the change from day 't', for days [t+1, t+2, ... t+14, t+22-t+28]
@@ -27,6 +29,8 @@ def priceToRate(priceList):
     rateList = [(p/base)-1 for p in priceList]
     avg = sum(rateList[22:]) / 7
     return rateList[1:15] + [avg]
+
+
 
 #@ Converts list of price for days [t, t+1, t+2, ..., t+28] in format
 #@ [[[set0-type0],...,[set0-type36]],...,[[set9-type0],...,[set9-type36]]]
