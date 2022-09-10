@@ -3,6 +3,7 @@
 #@ code for seeking trends per weekday/extract NaN periods are commented out
 #@ NO USE NOW EXCEPT FOR PLOTTING.. USE CLASS IN loadData.py FOR SIMPLER PREPROCESSING
 #@ THIS CODE WILL SAVE/LOAD PREPROCESSED DATA FROM ./p_data/pummok
+#@ maybe will become useful if we someday decide to extract weekdays..
 
 from glob import glob
 from tqdm import tqdm
@@ -27,6 +28,7 @@ class j_preprocessing_data(object):
         전체 데이터에서 해당하는 domae,imexport,pummok,somae,weather 별 분리
         """
         
+        self.data_list = glob(dir)
         self.domae = []
         self.imexport = []
         self.pummok = []
