@@ -12,7 +12,7 @@ class predictor:
         #@ calculate & save yearly trend for the correlated years
         #@ correlated years are wroten in cfg
         self.trends = []
-        for idx in range(0, 36 + 1):
+        for idx in range(0, len(trainPummokData)):
             splits = np.split(trainPummokData[idx]["해당일자_전체평균가격(원)"].to_numpy(), [365, 365*2, 365*3, 365*4])
             splits.pop(-1)
 
@@ -54,6 +54,7 @@ class predictor:
             if mode == "avg":
                 alpha = 0
                 beta = np.sum(notNanPrices) / np.sum([self.trends[trendtype][i] for i in notNanDLocs])
+
             elif mode == "ejchung": #@ sometimes doesn't converge
                 regr = ConstrainedLinearRegression()
                 regr.fit(np.reshape([self.trends[trendtype][i] for i in notNanDLocs], (-1,1)), notNanPrices,
@@ -90,13 +91,13 @@ class predictor:
         typePriceAns = alpha + beta * np.array([self.trends[trendtype][i] for i in target_dates])
         #@ overwrite the price of 'day 0' if it was not empty
         if not np.isnan(prices[-1]):
-                typePriceAns[0] = prices[-1]
+            typePriceAns[0] = prices[-1]
 
         return typePriceAns.tolist()
 
 #@ print correlation matrix for each type
 def printCorrMatrix(trainPummokData):
-    for idx in range(0, 36 + 1):
+    for idx in range(0, len(trainPummokData)):
         splits = np.split(trainPummokData[idx]["해당일자_전체평균가격(원)"].to_numpy(), [365, 365*2, 365*3, 365*4])
         splits.pop(-1)
         print(f"\n{idx}")
@@ -129,7 +130,7 @@ if __name__ == "__main__":
         trainData = dataLoader('./aT_train_raw/pummok_*.csv', saveFilePrefix = "train_", type = "csv")  #trainData = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
         trainData.load(save = False, load = True)
         #@ do euijun's preprocessing to train data
-        trainData.ejsPreProcess(medianFilterSize = 5)
+        trainData.ejsPreprocess(medianFilterSize = 5)
 
         #@ load raw test data
         testDataSet = []

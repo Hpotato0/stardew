@@ -17,7 +17,7 @@ class dataLoader:
     #@ dir: aT_train_raw/pummok_*.csv
     def __init__(self, dir, saveFilePrefix = "", type = "csv"):
         self.pummok_list = glob(dir) #@ list of pummok csv directories, in random order  
-        self.pummokData = [None]*(37) #@ placeholder for each type's data, in correct order
+        self.pummokData = [None]*(len(self.pummok_list)) #@ placeholder for each type's data, in correct order
         self.saveFilePrefix = saveFilePrefix
         self.type = type #@ what type of data to load
 
@@ -73,7 +73,7 @@ class dataLoader:
     #@ ejchung's preprocessing code migrated to class method
     #@ i.e. fill NaNs & remove outliers via a median filter
     #@ the preprocessing is done on self.pummokData
-    def ejsPreProcess(self, medianFilterSize = 5):
+    def ejsPreprocess(self, medianFilterSize = 5):
         for tidx, ddf in enumerate(self.pummokData):
             price = ddf["해당일자_전체평균가격(원)"].to_numpy()
 
@@ -130,6 +130,19 @@ class dataLoader:
   
             ddf.loc[:,"해당일자_전체평균가격(원)"] = price
 
+    #@ save pummokData (in case it was changed in ejsPreProcess)
+    def savePPData(self, dirName = "pp_data2"):
+        for filepath, ddf in zip(self.pummok_list, self.pummokData):
+            name = filepath.split('/')[-1] #@ e.g ".../pummok_5.csv" -> "pummok_5.csv"
+            savePath = f"./{dirName}/pummok/{self.saveFilePrefix}{name}"
+
+            if os.path.exists(f'./{dirName}') == False:
+                os.mkdir(f'./{dirName}')
+            if os.path.exists(f'./{dirName}/pummok') == False:
+                os.mkdir(f'./{dirName}/pummok')
+
+            ddf.to_csv(savePath, index=False)
+
 if __name__ == "__main__":
     #@ -------------------------
     #@ dataLoader example codes
@@ -142,7 +155,10 @@ if __name__ == "__main__":
     #@ load raw train data and do euijun's preprocessing
     trainDataPP = dataLoader('./aT_train_raw/pummok_*.csv', saveFilePrefix = "train_", type = "csv")  #trainData = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
     trainDataPP.load(save = False, load = True)
-    trainDataPP.ejsPreProcess()
+    trainDataPP.ejsPreprocess(medianFilterSize = 3)
+    
+    #@ save the preprocessed data
+    #trainDataPP.savePPData(dirName = "pp_data2")
 
     #@ load preprocessed data in txt created by euijun
     trainDataPP2 = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
@@ -155,7 +171,7 @@ if __name__ == "__main__":
         testDataSet[idx].load(save = False, load = True)    #@ switch save & load arguments when in need
 
     #@ plot raw data and euijun's preprocessed data
-    for plot_type in range(0,0):
+    for plot_type in range(7,8):
         plt.title(f"Daily Average Price of Type {plot_type}")
         plt.plot(trainDataRaw.pummokData[plot_type]["해당일자_전체평균가격(원)"])
         plt.plot(trainDataPP.pummokData[plot_type]["해당일자_전체평균가격(원)"])

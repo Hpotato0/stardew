@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-#@ Converts list of answers(change rate) in format
+#@ Converts list of answers(change rate) in format [r1, r2, ... ,r14, r22-28]
 #@ [[[set0-type0],...,[set0-type36]],...,[[set9-type0],...,[set9-type36]]]
 #@ into answer csv file
 def ratelistToCsv(allList, csvName):
