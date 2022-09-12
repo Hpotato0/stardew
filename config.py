@@ -2,7 +2,7 @@ import numpy as np
 
 config = {
     'predictor_correlated': {
-        "data_type": "raw",    # "mvavg", "raw"
+        "data_type": "mvavg",    # "mvavg", "raw"
         
         # current best
         0: [1,2,3,4],
