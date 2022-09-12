@@ -108,13 +108,12 @@ if __name__ == "__main__":
         x = [datetime.strptime(d, "%Y-%m-%d").date() for d in date]
         
         #fig.add_subplot(5, 8, typeIdx+1)
-        
-        # plt.plot(x, price)
-        #plt.plot(x[:14], np.ones(14) * 3000, c = 'red')
-        plt.plot(price[0:365])
-        plt.plot(price[365:365*2])
-        plt.plot(price[365*2:365*3])
-        plt.plot(price[365*3:])
+        plt.plot(x, price)
+        plt.plot(x[:14], np.ones(14) * 3000, c = 'red')
+        # plt.plot(price[0:365])
+        # plt.plot(price[365:365*2])
+        # plt.plot(price[365*2:365*3])
+        # plt.plot(price[365*3:])
         
         #plt.axis('off')
         plt.title(typeIdx)
