@@ -76,7 +76,6 @@ class dataLoader:
     def ejsPreProcess(self):
         for tidx, ddf in enumerate(self.pummokData):
             price = ddf["해당일자_전체평균가격(원)"].to_numpy()
-            print(len(ddf.loc[:,"해당일자_전체평균가격(원)"]))  
 
             #@ manual removal of outliers
             if tidx==0:
@@ -128,77 +127,47 @@ class dataLoader:
 
                         a = np.array([p_s + (p_e-p_s)/(end-start+1)*x for x in range(1,end-start+2)])
                         price[start:end+1] = np.array([p_s + (p_e-p_s)/(end-start+1)*x for x in range(1,end-start+2)])
-
-            print(len(ddf.loc[:,"해당일자_전체평균가격(원)"]))    
+  
             ddf.loc[:,"해당일자_전체평균가격(원)"] = price
 
-
-
-
 if __name__ == "__main__":
+    #@ -------------------------
+    #@ dataLoader example codes
+    #@ -------------------------
 
+    #@ load raw train data
+    trainDataRaw = dataLoader('./aT_train_raw/pummok_*.csv', saveFilePrefix = "train_", type = "csv")  #trainData = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
+    trainDataRaw.load(save = False, load = True)
 
-    
+    #@ load raw train data and do euijun's preprocessing
+    trainDataPP = dataLoader('./aT_train_raw/pummok_*.csv', saveFilePrefix = "train_", type = "csv")  #trainData = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
+    trainDataPP.load(save = False, load = True)
+    trainDataPP.ejsPreProcess()
 
-    
+    #@ load preprocessed data in txt created by euijun
+    trainDataPP2 = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
+    trainDataPP2.load()
 
-    
+    #@ load raw test data
+    testDataSet = []
+    for idx in range(0, 9 + 1):
+        testDataSet.append(dataLoader(f'./aT_test_raw/sep_{idx}/pummok_*.csv', saveFilePrefix = f"test{idx}_", type = "csv"))
+        testDataSet[idx].load(save = False, load = True)    #@ switch save & load arguments when in need
 
-    #@ predict 
-    allPriceAns = []
-    for set in range(0, 9 + 1):
-        setPriceAns = []
-        for type in range(0, 36 + 1):
-            if trends[type].size==0 or testDataSet[set].pummokData[type].empty:
-                setPriceAns.append(([1]*29))
-                continue
+    #@ plot raw data and euijun's preprocessed data
+    for plot_type in range(0,0):
+        plt.title(f"Daily Average Price of Type {plot_type}")
+        plt.plot(trainDataRaw.pummokData[plot_type]["해당일자_전체평균가격(원)"])
+        plt.plot(trainDataPP.pummokData[plot_type]["해당일자_전체평균가격(원)"])
+        plt.legend(["raw", "pp"])
+        plt.show()
 
-            dates = testDataSet[set].pummokData[type]["datadate"].tolist()
-            prices = testDataSet[set].pummokData[type]["해당일자_전체평균가격(원)"].tolist()
-            dateLocs = list(map(dateToDayLoc, dates))
+    #@ check if the migrated preprocessing methods are the same
+    for type in range(0,36):
+        pp1 = trainDataPP.pummokData[type]["해당일자_전체평균가격(원)"].tolist()
+        pp2 = trainDataPP2.pummokData[type]
 
-            isnan_ = np.isnan(prices)
-            notNanDLocs = [dateLocs[idx] for idx, b in enumerate(isnan_) if not b]
-            notNanPrices = [prices[idx] for idx, b in enumerate(isnan_) if not b]
-            
-
-            # if type == 0 and set == 0:
-            #     print(notNanDLocs)
-            #     print(notNanPrices)
-            #     x = [trends[type][i] for i in notNanDLocs]
-            #     plt.scatter(x, notNanPrices)
-            #     plt.show()
-            #     lr_predictor = Ridge(alpha=1000000).fit(np.reshape([trends[type][i] for i in notNanDLocs], (-1,1)), notNanPrices)
-            #     alpha = lr_predictor.intercept_
-            #     beta = lr_predictor.coef_[0]
-            #     print(alpha)
-            #     print(lr_predictor.coef_)
-
-            if notNanDLocs:
-                # lr_predictor = LinearRegression().fit(np.reshape([trends[type][i] for i in notNanDLocs], (-1,1)), notNanPrices)
-                # #lr_predictor = Ridge(alpha=10000000).fit(np.reshape([trends[type][i] for i in notNanDLocs], (-1,1)), notNanPrices)
-                # alpha = lr_predictor.intercept_
-                # beta = lr_predictor.coef_[0]
-
-                alpha = 0
-                beta = np.sum(notNanPrices) / np.sum([trends[type][i] for i in notNanDLocs])
-            else:
-                alpha = 0
-                beta = 1
-
-            
-
-            base_dloc = dateLocs[-1]
-
-            #@ leap years shouldn't matter much
-            target_dates = ((np.arange(base_dloc, base_dloc+29))%365).tolist()
-            typePriceAns = alpha + beta * np.array([trends[type][i] for i in target_dates])
-            
-            if not np.isnan(prices[-1]):
-                typePriceAns[0] = prices[-1]
-
-            setPriceAns.append(typePriceAns.tolist())
-        allPriceAns.append(setPriceAns)
-    
-
-    pricelistToCsv(allPriceAns, "zzb_yearly0")
+        for p1, p2 in zip(pp1, pp2):
+            if p1!=p2:
+                print(f"different! type: {type}")
+    print(f"equality check complete")
