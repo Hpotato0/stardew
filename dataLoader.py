@@ -73,7 +73,7 @@ class dataLoader:
     #@ ejchung's preprocessing code migrated to class method
     #@ i.e. fill NaNs & remove outliers via a median filter
     #@ the preprocessing is done on self.pummokData
-    def ejsPreProcess(self):
+    def ejsPreProcess(self, medianFilterSize = 5):
         for tidx, ddf in enumerate(self.pummokData):
             price = ddf["해당일자_전체평균가격(원)"].to_numpy()
 
@@ -86,7 +86,7 @@ class dataLoader:
 
             #@ remove outliers using median filter
             nz = np.reshape(np.argwhere(~np.isnan(price)), (1,-1))[0]
-            price[nz] = ndimage.median_filter(price[nz], size = 3)
+            price[nz] = ndimage.median_filter(price[nz], size = medianFilterSize)
             
             #@ fill single NaNs with the average of data before & after
             if np.isnan(price[0]) and not np.isnan(price[1]):

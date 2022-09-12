@@ -1,9 +1,11 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression, Ridge
+from constrained_linear_regression import ConstrainedLinearRegression
 import matplotlib.pyplot as plt
 from datetime import datetime
 
 from dataLoader import dataLoader
+from utility_submit import pricelistToCsv
 
 class predictor:
     def __init__(self, trainPummokData, cfg):
@@ -52,16 +54,31 @@ class predictor:
             if mode == "avg":
                 alpha = 0
                 beta = np.sum(notNanPrices) / np.sum([self.trends[trendtype][i] for i in notNanDLocs])
+            elif mode == "ejchung": #@ sometimes doesn't converge
+                regr = ConstrainedLinearRegression()
+                regr.fit(np.reshape([self.trends[trendtype][i] for i in notNanDLocs], (-1,1)), notNanPrices,
+                max_coef = [1.2],
+                min_coef = [0.4])
+                alpha = regr.intercept_
+                beta = regr.coef_[0]
 
+            elif mode == "naive":
+                lr_predictor = LinearRegression().fit(np.reshape([self.trends[trendtype][i] for i in notNanDLocs], (-1,1)), notNanPrices)
+                #lr_predictor = Ridge(alpha=10000000).fit(np.reshape([trends[type][i] for i in notNanDLocs], (-1,1)), notNanPrices)
+                alpha = lr_predictor.intercept_
+                beta = lr_predictor.coef_[0]
+                
+
+            #@ plot the regression
             if pltReg:
                 print(f"@@@ plot for type {trendtype} @@@")
                 print(f"test data date locations: {notNanDLocs}")
                 print(f"test data prices: {notNanPrices}")
                 print(f"alpha: {alpha}, beta: {beta}")
 
-                x = np.array([self.trends[trendtype][i] for i in notNanDLocs])
+                x = np.reshape([self.trends[trendtype][i] for i in notNanDLocs], (-1,1))
                 plt.scatter(x, notNanPrices)
-                plt.scatter(alpha + beta * x, notNanPrices)
+                plt.scatter(x, alpha+beta*x)
                 plt.show()
         else:
             alpha = 0
@@ -112,7 +129,7 @@ if __name__ == "__main__":
         trainData = dataLoader('./aT_train_raw/pummok_*.csv', saveFilePrefix = "train_", type = "csv")  #trainData = dataLoader('./euijun/data/prices/*.txt', type = "pptxt")
         trainData.load(save = False, load = True)
         #@ do euijun's preprocessing to train data
-        trainData.ejsPreProcess()
+        trainData.ejsPreProcess(medianFilterSize = 5)
 
         #@ load raw test data
         testDataSet = []
@@ -125,7 +142,7 @@ if __name__ == "__main__":
 
         #@ create predictor
         pred = predictor(trainData.pummokData, cfg)
-        #@ predict
+        #@ predict and save the results to allPriceAns
         allPriceAns = []
         for set in range(0, 9 + 1):
             setPriceAns = []
@@ -133,5 +150,9 @@ if __name__ == "__main__":
                 setPriceAns.append(pred.predictionFromTrend(
                     testPummokData = testDataSet[set].pummokData[type],
                     trendtype = type,
-                    mode = "avg"))
+                    mode = "avg",
+                    pltReg = False))
             allPriceAns.append(setPriceAns)
+
+        #@ put allPriceAns into csv file in answer format
+        pricelistToCsv(allPriceAns, csvName = "zzb_tmp")
