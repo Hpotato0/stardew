@@ -3,6 +3,7 @@ from sklearn.linear_model import LinearRegression, Ridge
 from constrained_linear_regression import ConstrainedLinearRegression
 import matplotlib.pyplot as plt
 from datetime import datetime
+from scipy import ndimage
 
 from dataLoader import dataLoader
 from utility_submit import pricelistToCsv
@@ -11,16 +12,22 @@ class predictor:
     def __init__(self, trainPummokData, cfg):
         #@ calculate & save yearly trend for the correlated years
         #@ correlated years are wroten in cfg
+        ctitle = "predictor_correlated"
+        self.data_type = cfg["predictor_correlated"]["data_type"]
+
         self.trends = []
         for idx in range(0, len(trainPummokData)):
-            splits = np.split(trainPummokData[idx]["해당일자_전체평균가격(원)"].to_numpy(), [365, 365*2, 365*3, 365*4])
-            splits.pop(-1)
-
-            ctitle = 'predictor_correlated'
             if not cfg[ctitle][idx]:
                 self.trends.append(np.array([]))
                 continue
+
+            if self.data_type == "mvavg":
+                splits = np.split(trainPummokData[idx], [365, 365*2, 365*3, 365*4])
+            elif self.data_type == "raw":
+                splits = np.split(trainPummokData[idx]["해당일자_전체평균가격(원)"].to_numpy(), [365, 365*2, 365*3, 365*4])
             
+            splits.pop(-1)
+
             relIdx = [j-1 for j in cfg[ctitle][idx]]
             baseTrend = splits[relIdx[-1]]
 
@@ -42,12 +49,19 @@ class predictor:
         
         dates = testPummokData["datadate"].tolist()
         prices = testPummokData["해당일자_전체평균가격(원)"].tolist()
+        if self.data_type == "mvavg":
+            prices_nofilter = prices
+            prices = ndimage.median_filter(prices, size=5)
         dateLocs = list(map(dateToDayLoc, dates))
 
         #@ extract prices that are not NaN
         isnan_ = np.isnan(prices)
         notNanDLocs = [dateLocs[idx] for idx, b in enumerate(isnan_) if not b]
         notNanPrices = [prices[idx] for idx, b in enumerate(isnan_) if not b]
+
+        prices_smooth = prices
+        
+        #     notNanPrices = [prices_smooth[idx] for idx, b in enumerate(isnan_) if not b]
 
         #@ get coefficients to be multiplied and added to trend data
         if notNanDLocs:
@@ -89,6 +103,14 @@ class predictor:
         #@ the prediction, leap years shouldn't matter much so just do mod 365
         target_dates = ((np.arange(base_dloc, base_dloc+29))%365).tolist()
         typePriceAns = alpha + beta * np.array([self.trends[trendtype][i] for i in target_dates])
+
+        if self.data_type == "mvavg":
+            if (typePriceAns[1] - prices_smooth[-1]) * (typePriceAns[1] - self.trends[trendtype][target_dates[1]]) < 0:
+                c = 0.4
+            else:
+                c = 0.1
+            typePriceAns = typePriceAns - (typePriceAns[1] - prices_nofilter[-1]) * c
+
         #@ overwrite the price of 'day 0' if it was not empty
         if not np.isnan(prices[-1]):
             typePriceAns[0] = prices[-1]
@@ -131,6 +153,8 @@ if __name__ == "__main__":
         trainData.load(save = False, load = True)
         #@ do euijun's preprocessing to train data
         trainData.ejsPreprocess(medianFilterSize = 5)
+        #@ calculate moving average
+        trainData.createMovingAvg(30)
 
         #@ load raw test data
         testDataSet = []
@@ -142,16 +166,23 @@ if __name__ == "__main__":
         # printCorrMatrix(trainData.pummokData)
 
         #@ create predictor
-        pred = predictor(trainData.pummokData, cfg)
+        data_type = cfg["predictor_correlated"]["data_type"]
+        if data_type == "raw":
+            pred = predictor(trainData.pummokData, cfg)
+        elif data_type == "mvavg":
+            pred = predictor(trainData.mvavg, cfg)
+        
         #@ predict and save the results to allPriceAns
         allPriceAns = []
         for set in range(0, 9 + 1):
             setPriceAns = []
             for type in range(0, 36 + 1):
+                # print(f"{set},{type}")
+                mode = "avg" #if set==7 and type==24 else "ejchung"
                 setPriceAns.append(pred.predictionFromTrend(
                     testPummokData = testDataSet[set].pummokData[type],
                     trendtype = type,
-                    mode = "avg",
+                    mode = mode,
                     pltReg = False))
             allPriceAns.append(setPriceAns)
 

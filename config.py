@@ -2,6 +2,8 @@ import numpy as np
 
 config = {
     'predictor_correlated': {
+        "data_type": "raw",    # "mvavg", "raw"
+
         0: [1,2,3,4],
         1: [1,3,4],
         2: [1,2,4],
