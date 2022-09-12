@@ -1,7 +1,7 @@
 import numpy as np
 
 config = {
-    'correlated': {
+    'predictor_correlated': {
         0: [1,2,3,4],
         1: [1,3,4],
         2: [1,2,4],
