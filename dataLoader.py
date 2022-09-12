@@ -86,7 +86,8 @@ class dataLoader:
 
             #@ remove outliers using median filter
             nz = np.reshape(np.argwhere(~np.isnan(price)), (1,-1))[0]
-            price[nz] = ndimage.median_filter(price[nz], size = medianFilterSize)
+            if tidx not in [7, 13, 21]:
+                price[nz] = ndimage.median_filter(price[nz], size = medianFilterSize)
             
             #@ fill single NaNs with the average of data before & after
             if np.isnan(price[0]) and not np.isnan(price[1]):
@@ -143,6 +144,16 @@ class dataLoader:
 
             ddf.to_csv(savePath, index=False)
 
+    #@ calculate and save moving average
+    #@ must be used after ejsPreprocess or some other way of removing NaNs
+    def createMovingAvg(self, size=10):
+        self.mvavg = []
+        for ddf in self.pummokData:
+            price = ddf["해당일자_전체평균가격(원)"].to_numpy()
+            price = ndimage.uniform_filter(price, size)
+            self.mvavg.append(price)
+        return
+
 if __name__ == "__main__":
     #@ -------------------------
     #@ dataLoader example codes
@@ -171,19 +182,30 @@ if __name__ == "__main__":
         testDataSet[idx].load(save = False, load = True)    #@ switch save & load arguments when in need
 
     #@ plot raw data and euijun's preprocessed data
-    for plot_type in range(7,8):
+    for plot_type in range(0,37):
+        plt.figure(figsize = (30, 18))
         plt.title(f"Daily Average Price of Type {plot_type}")
         plt.plot(trainDataRaw.pummokData[plot_type]["해당일자_전체평균가격(원)"])
         plt.plot(trainDataPP.pummokData[plot_type]["해당일자_전체평균가격(원)"])
         plt.legend(["raw", "pp"])
         plt.show()
 
-    #@ check if the migrated preprocessing methods are the same
-    for type in range(0,36):
-        pp1 = trainDataPP.pummokData[type]["해당일자_전체평균가격(원)"].tolist()
-        pp2 = trainDataPP2.pummokData[type]
+    #@ create moving average
+    trainDataPP.createMovingAvg(30)
+    #@ plot raw data, euijun's preprocessed data, moving average of 30 days
+    plot_type = 0
+    plt.plot(trainDataRaw.pummokData[plot_type]["해당일자_전체평균가격(원)"])
+    plt.plot(trainDataPP.pummokData[plot_type]["해당일자_전체평균가격(원)"])
+    plt.plot(trainDataPP.mvavg[plot_type])
+    plt.legend(["raw", "pp", "30"])
+    plt.show()
 
-        for p1, p2 in zip(pp1, pp2):
-            if p1!=p2:
-                print(f"different! type: {type}")
-    print(f"equality check complete")
+    #@ check if the migrated preprocessing methods are the same
+    # for type in range(0,37):
+    #     pp1 = trainDataPP.pummokData[type]["해당일자_전체평균가격(원)"].tolist()
+    #     pp2 = trainDataPP2.pummokData[type]
+
+    #     for p1, p2 in zip(pp1, pp2):
+    #         if p1!=p2:
+    #             print(f"different! type: {type}")
+    # print(f"equality check complete")
