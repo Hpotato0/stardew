@@ -86,7 +86,7 @@ class dataLoader:
 
             #@ remove outliers using median filter
             nz = np.reshape(np.argwhere(~np.isnan(price)), (1,-1))[0]
-            if tidx not in [7, 13, 21, 3, 8, 15, 26, 36]:
+            if tidx not in [13,3,1]:#for "raw"[7,13,21,3,8,15,26,36]:
                 price[nz] = ndimage.median_filter(price[nz], size = medianFilterSize)
             
             #@ fill single NaNs with the average of data before & after

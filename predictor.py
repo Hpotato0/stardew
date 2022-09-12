@@ -49,8 +49,9 @@ class predictor:
         
         dates = testPummokData["datadate"].tolist()
         prices = testPummokData["해당일자_전체평균가격(원)"].tolist()
-        if self.data_type == "mvavg":
-            prices_nofilter = prices
+        prices_nofilter = prices
+        if self.data_type == "mvavg":  
+            prices = ndimage.median_filter(prices, size=3)
             prices = ndimage.median_filter(prices, size=5)
         dateLocs = list(map(dateToDayLoc, dates))
 
@@ -112,8 +113,8 @@ class predictor:
             typePriceAns = typePriceAns - (typePriceAns[1] - prices_nofilter[-1]) * c
 
         #@ overwrite the price of 'day 0' if it was not empty
-        if not np.isnan(prices[-1]):
-            typePriceAns[0] = prices[-1]
+        if not np.isnan(prices_nofilter[-1]):
+            typePriceAns[0] = prices_nofilter[-1]
 
         return typePriceAns.tolist()
 
