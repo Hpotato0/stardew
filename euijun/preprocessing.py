@@ -14,7 +14,7 @@ import os
 class preprocessing_data(object):
     def __init__(self, dir, dir_outlier):
         self.pummok_list = glob(dir)
-        self.pummok_list.sort(key=natural_keys)
+        self.pummok_list.sort(key=natural_keys) # list of directories, sorted
         self.dir_outlier = dir_outlier
 
         self.prices = []
@@ -22,8 +22,8 @@ class preprocessing_data(object):
         self.add_pummock()
 
     def add_pummock(self, save=1):
-        for idx, pummok in enumerate(tqdm(self.pummok_list)):
-            if os.path.exists(f"./data/prices/{idx}.txt"):
+        for idx, pummok in enumerate(tqdm(self.pummok_list)):   # iterate through each pummok csv
+            if os.path.exists(f"./data/prices/{idx}.txt"):      # if a save exists just load it to self.prices, self.volumes
                 with open(f"./data/prices/{idx}.txt", "r") as pricefile:
                     price = np.loadtxt(pricefile)
                 with open(f"./data/volumes/{idx}.txt", "r") as volumefile:
@@ -52,9 +52,11 @@ class preprocessing_data(object):
                     price[outlier_index] = 0
                     volume[outlier_index] = 0
 
+                # remove outliers using median filter
                 indices = price.nonzero()
                 price[indices] = ndimage.median_filter(price[indices], size=3)
 
+                # fill single NaNs with the average of data before & after
                 for i in range(1, len(price)-1):
                     if price[i] == 0 and price[i-1] * price[i+1] != 0:
                         price[i] = (price[i-1] + price[i+1])/2
@@ -102,3 +104,9 @@ class preprocessing_data(object):
 
     def __len__(self):
         return len(self.pummok_list)
+
+if __name__ == "__main__":
+    data = preprocessing_data(dir='../aT_train_raw/pummok_*.csv', 
+                              dir_outlier='./outliers')
+    splits = np.split(data.prices[0], [365, 365*2, 365*3, 365*4])
+    print(len(splits[-1]))

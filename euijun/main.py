@@ -32,10 +32,10 @@ if __name__ == "__main__":
 
         for j in range(len(splits)):
             for k in range(j+1, len(splits)):
-                corrs.append(pearsonr(splits[j], splits[k]).statistic)
-                corrs_diff.append(pearsonr(splits_diff[j], splits_diff[k]).statistic)
-                corrs_mvavg.append(pearsonr(splits_mvavg[j], splits_mvavg[k]).statistic)
-                corrs_mvavg_diff.append(pearsonr(splits_mvavg_diff[j], splits_mvavg_diff[k]).statistic)
+                corrs.append(pearsonr(splits[j], splits[k])[0])
+                corrs_diff.append(pearsonr(splits_diff[j], splits_diff[k])[0])
+                corrs_mvavg.append(pearsonr(splits_mvavg[j], splits_mvavg[k])[0])
+                corrs_mvavg_diff.append(pearsonr(splits_mvavg_diff[j], splits_mvavg_diff[k])[0])
 
         # print(i, min(corrs), min(corrs_diff), min(corrs_mvavg), min(corrs_mvavg_diff))
         # 일단은 최소로 했는데, 재형이가 말했듯이 끝에서 두번째로 해도 될 듯? 아닌가? ㅁㄹ
@@ -58,6 +58,9 @@ if __name__ == "__main__":
 
     print(whatthefuck)
     print(whatthefuck_diff)
+
+    plt.plot(data.prices[22])
+    plt.show()
 
     # plt.plot(data.prices_mvavg[17])
     # plt.plot(data.prices_diff[25])

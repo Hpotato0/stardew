@@ -86,16 +86,16 @@ class predictor:
                 
 
             #@ plot the regression
-            if pltReg:
-                print(f"@@@ plot for type {trendtype} @@@")
-                print(f"test data date locations: {notNanDLocs}")
-                print(f"test data prices: {notNanPrices}")
-                print(f"alpha: {alpha}, beta: {beta}")
+            # if pltReg:
+            #     print(f"@@@ plot for type {trendtype} @@@")
+            #     print(f"test data date locations: {notNanDLocs}")
+            #     print(f"test data prices: {notNanPrices}")
+            #     print(f"alpha: {alpha}, beta: {beta}")
 
-                x = np.reshape([self.trends[trendtype][i] for i in notNanDLocs], (-1,1))
-                plt.scatter(x, notNanPrices)
-                plt.scatter(x, alpha+beta*x)
-                plt.show()
+            #     x = np.reshape([self.trends[trendtype][i] for i in notNanDLocs], (-1,1))
+            #     plt.scatter(x, notNanPrices)
+            #     plt.scatter(x, alpha+beta*x)
+            #     plt.show()
         else:
             alpha = 0
             beta = 1
@@ -111,6 +111,18 @@ class predictor:
             else:
                 c = 0.1
             typePriceAns = typePriceAns - (typePriceAns[1] - prices_nofilter[-1]) * c
+
+
+        if pltReg:
+            plt.figure(figsize = (30, 18))
+            plt.plot(np.arange(base_dloc+1, base_dloc+29), typePriceAns[1:])
+            x_trend = notNanDLocs + [base_dloc+i for i in range(1,30)]
+            plt.plot(x_trend, [self.trends[trendtype][i%365] for i in x_trend])
+            plt.plot(notNanDLocs, notNanPrices)
+            plt.legend(['prediction', 'trend', 'price'])
+            plt.title(f"{trendtype}")
+            plt.show()
+
 
         #@ overwrite the price of 'day 0' if it was not empty
         if not np.isnan(prices_nofilter[-1]):
@@ -179,12 +191,12 @@ if __name__ == "__main__":
             setPriceAns = []
             for type in range(0, 36 + 1):
                 # print(f"{set},{type}")
-                mode = "avg" #if set==7 and type==24 else "ejchung"
+                mode = "avg" if set==7 and type==24 else "ejchung"
                 setPriceAns.append(pred.predictionFromTrend(
                     testPummokData = testDataSet[set].pummokData[type],
                     trendtype = type,
                     mode = mode,
-                    pltReg = False))
+                    pltReg = (set==6)))
             allPriceAns.append(setPriceAns)
 
         #@ put allPriceAns into csv file in answer format
